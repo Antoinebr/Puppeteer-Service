@@ -1,0 +1,19 @@
+{
+  "name": "puppeteer-service",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Puppeteer as a service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "parse-domain": "^2.1.6",
+    "puppeteer": "^1.9.0"
+  },
+  "engines": {
+    "node": ">=8"
+  }
+}
