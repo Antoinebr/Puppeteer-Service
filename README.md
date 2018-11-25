@@ -1,7 +1,7 @@
 # Puppeteer Service 
 
 A service to get third party tags from a given website. 
-More enpoints and features to come 
+More endpoints and features to come 
 
 
 ## How to start ? 
