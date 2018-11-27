@@ -6,7 +6,7 @@ More endpoints and features to come
 
 ## How to start ? 
 
-```bash BUILD.sh && bash RUN.sh```
+```make build && make run```
 
 
 ## API 
@@ -14,9 +14,8 @@ More endpoints and features to come
 ### Get the third party for a given domain 
 
 ```bash
-curl -X GET \
-  'http://localhost:3001/get3p?url=https://www.randomeSite.com/' \
-  -H 'Content-Type: application/json' 
+curl -X GET 'http://localhost:3001/get3p?url=https://www.renault.fr/' \
+  -H 'Content-Type: application/json'
 ```
 
 Returns : 
