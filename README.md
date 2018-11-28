@@ -1,26 +1,28 @@
-# Puppeteer Service 
+# Puppeteer Service
 
-A service to get third party tags from a given website. 
-More endpoints and features to come 
+A service to get different informations from a given website thanks to Puppeteer
 
+More endpoints and features to come
 
-## How to start ? 
+## How to start
 
 ```make build && make run```
 
 
-## API 
+## API
 
-### Get the third party for a given domain 
+### Get the third party for a given domain
 
 ```bash
+
 curl -X GET 'http://localhost:3001/get3p?url=https://www.renault.fr/' \
   -H 'Content-Type: application/json'
+
 ```
 
-Returns : 
+Returns :
 
-```shouldntBeBlocked``` is equal to everything but marketing tags, so you find CDN... 
+```shouldntBeBlocked``` is equal to everything but marketing tags, so you find CDN...
 
 ```JSON
 {
@@ -41,17 +43,18 @@ Returns :
 }
 ```
 
-### Get the code coverage of a given url 
+### Get the code coverage of a given url
 
 ```bash
-curl -X GET 'http://localhost:3001/coverage?url=https://monbraceletnato.fr/' \
-  -H 'Content-Type: application/json' 
+curl -X GET 'http://localhost:3001/coverage?url=https://www.renault.fr/' \
+  -H 'Content-Type: application/json'
 ```
 
-Retuns : 
+Retuns :
 
 (The response example is truncated )
-```JSON 
+
+```JSON
 
 {
     "summary": {
@@ -91,7 +94,7 @@ Retuns :
             "eventType": "networkidle0",
             "url": "https://c.la1-c1-lon.salesforceliveagent.com/content/g/js/35.0/deployment.js?_=1543409239150",
             "summary": "12.4KB/40.4KB (31%)"
-        },
-    
+        }
+    ]
 }
 ```
