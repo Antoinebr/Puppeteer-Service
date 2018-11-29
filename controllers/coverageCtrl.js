@@ -85,7 +85,8 @@ exports.getCoverage = async (req, res) => {
     async function collectCoverage() {
         const browser = await puppeteer.launch({
             args: ['--no-sandbox', '--disable-setuid-sandbox'], // , '--disable-dev-shm-usage']
-            headless: true
+            headless: true,
+            timeout:60000
         });
 
         // Do separate load for each event. See
