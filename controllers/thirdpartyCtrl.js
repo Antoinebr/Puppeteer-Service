@@ -40,9 +40,9 @@ exports.get3p = async (request, response) => {
         const page = await browser.newPage();
 
         await page.goto(url, {
-            waitUntil: 'networkidle0'
+            waitUntil: 'load'
         });
-
+        
         console.log(`[Pupeeteer] Opened ${url}`);
 
         await page.waitFor(2000);

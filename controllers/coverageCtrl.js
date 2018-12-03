@@ -8,7 +8,7 @@ exports.getCoverage = async (req, res) => {
         'domcontentloaded',
         'load',
         // 'networkidle2',
-        'networkidle0',
+        //'networkidle0',
     ];
 
     function formatBytesToKB(bytes) {
@@ -85,8 +85,7 @@ exports.getCoverage = async (req, res) => {
     async function collectCoverage() {
         const browser = await puppeteer.launch({
             args: ['--no-sandbox', '--disable-setuid-sandbox'], // , '--disable-dev-shm-usage']
-            headless: true,
-            timeout:60000
+            headless: true
         });
 
         // Do separate load for each event. See
@@ -103,6 +102,8 @@ exports.getCoverage = async (req, res) => {
             await page.goto(URL, {
                 waitUntil: event
             });
+
+            await page.waitFor(3000);
             // await page.waitForNavigation({waitUntil: event});
 
             const [jsCoverage, cssCoverage] = await Promise.all([
