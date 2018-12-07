@@ -10,7 +10,7 @@ app.use(cors());
 
 // router 
 app.get('/get3p', thirdpartyCtrl.get3p);
-app.get('/coverage',coverageCtrl.getCoverage);
+app.get('/coverage',coverageCtrl.sendCoverage);
 
 
 

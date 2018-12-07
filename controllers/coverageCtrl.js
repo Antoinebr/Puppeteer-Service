@@ -1,195 +1,301 @@
 const puppeteer = require('puppeteer');
+const list = require('../thirdparty-list/list');
+const URL = require('url');
 
-exports.getCoverage = async (req, res) => {
+const EVENTS = [
+    'domcontentloaded',
+    'load',
+    // 'networkidle2',
+    //'networkidle0',
+];
 
-    const URL = req.query.url;
+const stats = new Map();
 
-    const EVENTS = [
-        'domcontentloaded',
-        'load',
-        // 'networkidle2',
-        //'networkidle0',
-    ];
 
-    function formatBytesToKB(bytes) {
-        if (bytes > 1024) {
-            const formattedNum = new Intl.NumberFormat('en-US', {
-                maximumFractionDigits: 1
-            }).format(bytes / 1024);
-            return `${formattedNum}KB`;
-        }
-        return `${bytes} bytes`;
+function formatBytesToKB(bytes) {
+    if (bytes > 1024) {
+        const formattedNum = new Intl.NumberFormat('en-US', {
+            maximumFractionDigits: 1
+        }).format(bytes / 1024);
+        return `${formattedNum}KB`;
+    }
+    return `${bytes} bytes`;
+}
+
+
+/**
+ * UsageFormatter
+ * 
+ * Format the data 
+ */
+class UsageFormatter {
+
+    constructor(stats) {
+        this.stats = stats;
     }
 
-    class UsageFormatter {
-
-        constructor(stats) {
-            this.stats = stats;
-        }
-
-        summary(used = this.stats.usedBytes, total = this.stats.totalBytes) {
-            const percent = Math.round((used / total) * 100);
-            return `${formatBytesToKB(used)}/${formatBytesToKB(total)} (${percent}%)`;
-        }
-
-        shortSummary(used, total = this.stats.totalBytes) {
-            const percent = Math.round((used / total) * 100);
-            return used ? `${formatBytesToKB(used)} (${percent}%)` : 0;
-        }
-
-
+    summary(used = this.stats.usedBytes, total = this.stats.totalBytes) {
+        const percent = Math.round((used / total) * 100);
+        return `${formatBytesToKB(used)}/${formatBytesToKB(total)} (${percent}%)`;
     }
 
-    const stats = new Map();
-
-    /**
-     * @param {!Object} coverage
-     * @param {string} type Either "css" or "js" to indicate which type of coverage.
-     * @param {string} eventType The page event when the coverage was captured.
-     */
-    function addUsage(coverage, type, eventType) {
-
-        for (const entry of coverage) {
-            if (!stats.has(entry.url)) {
-                stats.set(entry.url, []);
-            }
-
-            const urlStats = stats.get(entry.url);
-
-            let eventStats = urlStats.find(item => item.eventType === eventType);
-            if (!eventStats) {
-                eventStats = {
-                    cssUsed: 0,
-                    jsUsed: 0,
-                    get usedBytes() {
-                        return this.cssUsed + this.jsUsed;
-                    },
-                    totalBytes: 0,
-                    get percentUsed() {
-                        return this.totalBytes ? Math.round(this.usedBytes / this.totalBytes * 100) : 0;
-                    },
-                    eventType,
-                    url: entry.url,
-                };
-                urlStats.push(eventStats);
-            }
-
-            eventStats.totalBytes += entry.text.length;
-
-            for (const range of entry.ranges) {
-                eventStats[`${type}Used`] += range.end - range.start - 1;
-            }
-        }
+    shortSummary(used, total = this.stats.totalBytes) {
+        const percent = Math.round((used / total) * 100);
+        return used ? `${formatBytesToKB(used)} (${percent}%)` : 0;
     }
 
-    async function collectCoverage() {
-        const browser = await puppeteer.launch({
-            args: ['--no-sandbox', '--disable-setuid-sandbox'], // , '--disable-dev-shm-usage']
-            headless: true
+
+}
+
+
+/**
+ * addUsage
+ * 
+ * @param {!Object} coverage
+ * @param {string} type Either "css" or "js" to indicate which type of coverage.
+ * @param {string} eventType The page event when the coverage was captured.
+ */
+function addUsage(coverage, type, eventType) {
+
+    for (const entry of coverage) {
+        if (!stats.has(entry.url)) {
+            stats.set(entry.url, []);
+        }
+
+        const urlStats = stats.get(entry.url);
+
+        let eventStats = urlStats.find(item => item.eventType === eventType);
+        if (!eventStats) {
+            eventStats = {
+                cssUsed: 0,
+                jsUsed: 0,
+                get usedBytes() {
+                    return this.cssUsed + this.jsUsed;
+                },
+                totalBytes: 0,
+                get percentUsed() {
+                    return this.totalBytes ? Math.round(this.usedBytes / this.totalBytes * 100) : 0;
+                },
+                eventType,
+                url: entry.url,
+            };
+            urlStats.push(eventStats);
+        }
+
+        eventStats.totalBytes += entry.text.length;
+
+        for (const range of entry.ranges) {
+            eventStats[`${type}Used`] += range.end - range.start - 1;
+        }
+    }
+}
+
+
+
+/**
+ * collectCoverage
+ * 
+ * @param {string} URL 
+ */
+async function collectCoverage(URL) {
+
+    const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // , '--disable-dev-shm-usage']
+        headless: true
+    });
+
+    console.log("pupetteer started...");
+
+    // Do separate load for each event. See
+    // https://github.com/GoogleChrome/puppeteer/issues/1887
+    const collectPromises = EVENTS.map(async event => {
+
+        const page = await browser.newPage();
+
+        await Promise.all([
+            page.coverage.startJSCoverage(),
+            page.coverage.startCSSCoverage()
+        ]);
+
+        await page.goto(URL, {
+            waitUntil: event
         });
 
-        // Do separate load for each event. See
-        // https://github.com/GoogleChrome/puppeteer/issues/1887
-        const collectPromises = EVENTS.map(async event => {
+        await page.waitFor(5000);
+        // await page.waitForNavigation({waitUntil: event});
 
-            const page = await browser.newPage();
+        const [jsCoverage, cssCoverage] = await Promise.all([
+            page.coverage.stopJSCoverage(),
+            page.coverage.stopCSSCoverage()
+        ]);
 
-            await Promise.all([
-                page.coverage.startJSCoverage(),
-                page.coverage.startCSSCoverage()
-            ]);
+        addUsage(cssCoverage, 'css', event);
+        addUsage(jsCoverage, 'js', event);
 
-            await page.goto(URL, {
-                waitUntil: event
-            });
+        await page.close();
+    });
 
-            await page.waitFor(3000);
-            // await page.waitForNavigation({waitUntil: event});
+    await Promise.all(collectPromises);
 
-            const [jsCoverage, cssCoverage] = await Promise.all([
-                page.coverage.stopJSCoverage(),
-                page.coverage.stopCSSCoverage()
-            ]);
-
-            addUsage(cssCoverage, 'css', event);
-            addUsage(jsCoverage, 'js', event);
-
-            await page.close();
-        });
-
-        await Promise.all(collectPromises);
-
-        return browser.close();
-    }
-
-    (async () => {
+    return browser.close();
+}
 
 
-        let data = {
-            summary: {},
-            urls: []
-        };
+
+/**
+ * 
+ * 
+ * @param {string} URL 
+ */
+async function collectCoverageFromPupetter(URL) {
+
+    return new Promise(async (resolve, reject) => {
+
+        try {
+
+            let data = {
+                summary: {},
+                urls: []
+            };
 
 
-        await collectCoverage();
+            await collectCoverage(URL);
 
-        for (const [url, vals] of stats) {
+            for (const [url, vals] of stats) {
 
-            EVENTS.forEach(event => {
-                const usageForEvent = vals.filter(val => val.eventType === event);
+                EVENTS.forEach(event => {
+                    const usageForEvent = vals.filter(val => val.eventType === event);
 
-                if (usageForEvent.length) {
-                    for (const stats of usageForEvent) {
+                    if (usageForEvent.length) {
+                        for (const stats of usageForEvent) {
 
-                        const formatter = new UsageFormatter(stats);
-                        formatter.stats.summary = formatter.summary();
-                        data.urls.push(formatter.stats);
+                            const formatter = new UsageFormatter(stats);
+                            formatter.stats.summary = formatter.summary();
+                            data.urls.push(formatter.stats);
 
+                        }
                     }
-                }
+
+                });
+
+
+            }
+
+            // Print total usage for each event.
+            EVENTS.forEach(event => {
+
+                let totalBytes = 0;
+                let totalUsedBytes = 0;
+
+                const metrics = Array.from(stats.values());
+                const statsForEvent = metrics.map(eventStatsForUrl => {
+                    const statsForEvent = eventStatsForUrl.filter(stat => stat.eventType === event)[0];
+                    // TODO: need to sum max totalBytes. Currently ignores stats if event didn't
+                    // have an entry. IOW, all total numerators should be max totalBytes seen for that event.
+                    if (statsForEvent) {
+                        totalBytes += statsForEvent.totalBytes;
+                        totalUsedBytes += statsForEvent.usedBytes;
+                    }
+                });
+
+                const percentUsed = Math.round(totalUsedBytes / totalBytes * 100);
+
+                // create summary
+                data.summary[event] = {}
+                data.summary[event].percentUsed = percentUsed;
+                data.summary[event].totalUsedBytes = formatBytesToKB(totalUsedBytes);
+                data.summary[event].totalBytes = formatBytesToKB(totalBytes);
+
 
             });
 
+            return resolve(data);
+
+
+        } catch (error) {
+
+            return reject(`Something went wrong ${error}`);
 
         }
 
-        // Print total usage for each event.
-        EVENTS.forEach(event => {
 
-            let totalBytes = 0;
-            let totalUsedBytes = 0;
-
-            const metrics = Array.from(stats.values());
-            const statsForEvent = metrics.map(eventStatsForUrl => {
-                const statsForEvent = eventStatsForUrl.filter(stat => stat.eventType === event)[0];
-                // TODO: need to sum max totalBytes. Currently ignores stats if event didn't
-                // have an entry. IOW, all total numerators should be max totalBytes seen for that event.
-                if (statsForEvent) {
-                    totalBytes += statsForEvent.totalBytes;
-                    totalUsedBytes += statsForEvent.usedBytes;
-                }
-            });
-
-            const percentUsed = Math.round(totalUsedBytes / totalBytes * 100);
-
-            // create summary
-            data.summary[event] = {}
-            data.summary[event].percentUsed = percentUsed;
-            data.summary[event].totalUsedBytes = formatBytesToKB(totalUsedBytes);
-            data.summary[event].totalBytes = formatBytesToKB(totalBytes);
+    });
+}
 
 
-        });
 
-        //console.log(JSON.stringify(data))
+const identifyThirdParty = (coverage, mainURL) => {
 
-        return res.json(data);
+    const mainHost = URL.parse(mainURL).host;
 
-    })()
-    .catch(e => {
+    coverage.urls = coverage.urls.map(c => {
 
-        return res.status(500).send(`Something went wrong ${e}`);
-    })
+        const host = URL.parse(c.url).host;
+
+        c.isExternal = ( host === mainHost ) ? false : true;
+
+        c.isThirdParty = list.isThirdPartyURL(host);  
+
+        return c;
+    });
+
+    return coverage;
+
+}
+
+const readTheCoverage = (coverage, event, type = "js", filter3P = false ) => {
+
+
+    let final = coverage.urls.filter(c => c.eventType === event);
+
+
+    // for JavaScript 
+    if (type === "js"){
+
+        final = final.filter(c => c.jsUsed > 0 && c.cssUsed === 0);
+
+        if(filter3P) final = final.filter(c => !c.isThirdParty);
+
+    } 
+
+    // for CSS
+    if (type === "css") final = final.filter(c => c.cssUsed > 0 && c.jsUsed === 0);
+
+
+
+    let urlTotalBytes = final.reduce((initial, url) => initial + url.totalBytes, initial = 0);
+    let urlUsedBytes = final.reduce((initial, url) => initial + url.usedBytes, initial = 0);
+
+
+    return {
+        event,
+        filter3P,
+        percentageUsed: Math.round(urlUsedBytes / urlTotalBytes * 100),
+        percentageUnused: 100 - Math.round(urlUsedBytes / urlTotalBytes * 100),
+        totalBytes: urlTotalBytes
+    }
+
+
+}
+
+
+
+
+
+
+exports.sendCoverage = async (req, res) => {
+
+    console.log("Request...")
+    let coverage = await collectCoverageFromPupetter(req.query.url)
+        .catch(e => res.status(500).send(`Something went wrong ${e}`));
+
+    coverage = identifyThirdParty(coverage,req.query.url);
+
+    res.json({
+        js: readTheCoverage(coverage, 'load', 'js', req.query.filter3p),
+        css: readTheCoverage(coverage, 'load', 'css'),
+        coverage
+    });
 
 
 };

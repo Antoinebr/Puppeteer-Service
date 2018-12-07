@@ -24,6 +24,28 @@ known3pHostname.toString().split('\n').forEach(domain => listof3P[domain] = doma
 const isAThirdPaty = hostname => listof3P[hostname] ? true : false;
 
 
+
+/**
+ * isThirdPartyURL
+ * test if a given URL is a thrid party 
+ * @param {string} hostname 
+ * @returns {bool}
+ */
+exports.isThirdPartyURL = url => {
+    
+    const {
+        domain,
+        tld
+    } = parseDomain(url);
+
+    hostname = `${domain}.${tld}`;
+
+    return isAThirdPaty(hostname);
+
+}
+
+
+
 /** 
  * classifyThirdParties
  * 
