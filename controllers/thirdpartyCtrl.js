@@ -1,5 +1,9 @@
 const list = require('../thirdparty-list/list');
 const puppeteer = require('puppeteer');
+const URL = require('url');
+const {
+    dumpError
+} = require('../utils/error');
 
 exports.get3p = async (request, response) => {
 
@@ -42,8 +46,8 @@ exports.get3p = async (request, response) => {
         await page.goto(url, {
             waitUntil: 'load'
         });
-        
-        console.log(`[Pupeeteer] Opened ${url}`);
+
+        console.log(`[Pupeeteer] Opened dd ${url}`);
 
         await page.waitFor(2000);
 
@@ -54,21 +58,28 @@ exports.get3p = async (request, response) => {
 
             [...document.querySelectorAll('script')]
             .filter(e => !e.src.includes(document.location.hostname) && e.src !== "")
-                .map(e => domainList.add(new URL(e.src).host));
+                .map(e => domainList.add(e.src));
 
             return [...domainList];
 
         });
 
 
+        const thirdPartyHosts = thirdPartyScripts.map(e => URL.parse(e).host);
+
+        console.log(thirdPartyHosts);
+
         console.log(`[Pupeeteer] Finished  ${url}`);
 
-        const thirdPartyScriptsClassified = list.classifyThirdParties(thirdPartyScripts);
+        const thirdPartyScriptsClassified = list.classifyThirdParties(thirdPartyHosts);
 
         response.json(thirdPartyScriptsClassified);
 
 
     } catch (err) {
+
+        console.log(dumpError(err))
+        
         response.status(500).send(err.toString());
     }
 
