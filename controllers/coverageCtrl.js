@@ -6,12 +6,13 @@ class coverageRunner {
 
     constructor(
         url,
-        EVENTS = ['domcontentloaded',
+        EVENTS = [
+            'domcontentloaded',
             'load',
         ]) {
 
         this.url = url;
-        this.stats = new Map(); 
+        this.stats = new Map();
         this.EVENTS = EVENTS;
     }
 
