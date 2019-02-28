@@ -47,7 +47,11 @@ exports.get3p = async (request, response) => {
             waitUntil: 'load'
         });
 
-        console.log(`[Pupeeteer] Opened dd ${url}`);
+
+        if (process.env.DEBUG) {
+            console.log(`[Pupeeteer] Opened dd ${url}`);
+        }
+
 
         await page.waitFor(2000);
 
@@ -67,9 +71,12 @@ exports.get3p = async (request, response) => {
 
         const thirdPartyHosts = thirdPartyScripts.map(e => URL.parse(e).host);
 
-        console.log(thirdPartyHosts);
+        if (process.env.DEBUG) {
 
-        console.log(`[Pupeeteer] Finished  ${url}`);
+            console.log(thirdPartyHosts);
+            console.log(`[Pupeeteer] Finished  ${url}`);
+
+        }
 
         const thirdPartyScriptsClassified = list.classifyThirdParties(thirdPartyHosts);
 
