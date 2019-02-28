@@ -5,7 +5,8 @@
   "description": "Puppeteer as a service",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "npx jest --watchAll"
   },
   "dependencies": {
     "chalk": "^2.4.2",
@@ -16,5 +17,9 @@
   },
   "engines": {
     "node": ">=8"
+  },
+  "devDependencies": {
+    "jest": "^24.1.0",
+    "supertest": "^3.4.2"
   }
 }
