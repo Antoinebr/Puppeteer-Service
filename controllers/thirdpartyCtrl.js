@@ -78,8 +78,10 @@ exports.get3p = async (request, response) => {
 
     } catch (err) {
 
-        console.log(dumpError(err))
-        
+        if (process.env.DEBUG) {
+            console.log(dumpError(err))
+        }
+
         response.status(500).send(err.toString());
     }
 

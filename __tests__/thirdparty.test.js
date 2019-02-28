@@ -29,12 +29,23 @@ afterAll(() => {
 
 describe('Test the third party endpoint', () => {
 
-    test('get thrid party without required parameters sends a 4xx status', async () => {
+    it('should return a 4xx when the url patameter is missing', async () => {
 
         const response = await request(app).get('/get3p');
         expect(response.status).toEqual(400);
 
     });
+
+
+    it('should send an error with a 500 status', async () => {
+
+        const response = await request(app).get('/get3p?url=google.fr');
+ 
+        expect(response.status).toEqual(500);
+        expect(response.text).toEqual("Error: Protocol error (Page.navigate): Cannot navigate to invalid URL");
+
+    });
+
 
 
 });
