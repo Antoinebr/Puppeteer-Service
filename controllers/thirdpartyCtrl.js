@@ -44,7 +44,8 @@ exports.get3p = async (request, response) => {
         const page = await browser.newPage();
 
         await page.goto(url, {
-            waitUntil: 'load'
+            waitUntil: 'load',
+            timeout : 90000
         });
 
 

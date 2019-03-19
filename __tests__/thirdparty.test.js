@@ -15,6 +15,9 @@ beforeAll(() => {
 
     // setting up test specific route : 
     app.get('/controllHomePage', (req, res) => res.sendFile(__dirname + '/assets/thirdparty/home.html'));
+    app.get('/controllHomePageSlowedDown',  (req, res) =>  setTimeout( () => res.sendFile(__dirname + '/assets/thirdparty/home.html'), 34000) );
+
+ 
 
 });
 
@@ -32,6 +35,11 @@ afterAll(() => {
 
 describe('Test the third party endpoint', () => {
 
+    beforeEach(() => {
+        jest.setTimeout(200000);
+    });
+
+    
     it('should return a 4xx when the url patameter is missing', async () => {
 
         const response = await request(app).get('/get3p');
@@ -61,6 +69,15 @@ describe('Test the third party endpoint', () => {
     it('should detect third party on the controll page', async () => {
 
         const response = await request(app).get(`/get3p?url=http://localhost:${process.env.PORT }/controllHomePage`);
+        expect(response.status).toEqual(200);
+        expect(response.text).toEqual('{\"shouldBeBlocked\":[\"zopim.com\",\"google-analytics.com\",\"facebook.net\"],\"shouldntBeBlocked\":[]}');
+
+    });
+
+
+    it('shouldn\'t return a timeout', async() => {
+
+        const response = await request(app).get(`/get3p?url=http://localhost:${process.env.PORT }/controllHomePageSlowedDown`);
         expect(response.status).toEqual(200);
         expect(response.text).toEqual('{\"shouldBeBlocked\":[\"zopim.com\",\"google-analytics.com\",\"facebook.net\"],\"shouldntBeBlocked\":[]}');
 
