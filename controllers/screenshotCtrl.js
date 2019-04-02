@@ -49,6 +49,7 @@ exports.takeScreenshot = async (request,response) => {
     const opts = {
       fullPage,
       // omitBackground: true
+      type:"jpeg", quality: 60
     };
 
     if (!fullPage) {
