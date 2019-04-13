@@ -16,7 +16,7 @@ RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
 # Run everything after as non-privileged user.
 USER pptruser
 
-EXPOSE 8080
-ENTRYPOINT ["dumb-init", "--"]
+#EXPOSE 8080
+#ENTRYPOINT ["dumb-init", "--"]
 CMD ["npm", "run", "start"]
 #CMD ["bash"]

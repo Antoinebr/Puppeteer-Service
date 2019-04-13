@@ -98,3 +98,32 @@ Retuns :
     ]
 }
 ```
+
+### Get a mobile screenshot 
+
+```bash
+
+curl -X GET 'http://localhost:3001/screenshot?url=https://www.renault.fr/'
+
+```
+
+Returns : the image 
+
+
+
+## Deploy this image ?
+
+### You can use Google Cloud Run 
+
+
+Deploy the image :
+
+```
+gcloud builds submit --tag gcr.io/<nameOfYourGCPProject>/puppeteer-service
+```
+
+Deploy the image :
+
+```
+gcloud beta run deploy --image gcr.io/<nameOfYourGCPProject>/puppeteer-service --memory=1Gi
+```
