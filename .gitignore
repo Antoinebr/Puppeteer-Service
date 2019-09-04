@@ -11,6 +11,7 @@ variables.env.now
 *.ntvs*
 *.njsproj
 *.sln
-.sass-cache 
+.sass-cache
+.package-lock.json
 
 # Project specific

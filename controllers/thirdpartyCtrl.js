@@ -1,5 +1,6 @@
 const list = require('../thirdparty-list/list');
 const puppeteer = require('puppeteer');
+const devices = require('puppeteer/DeviceDescriptors');
 const URL = require('url');
 const {
     dumpError
@@ -8,9 +9,9 @@ const {
 exports.get3p = async (request, response) => {
 
     const url = request.query.url;
+    const crawlAsMobile = request.query.set_mobile_ua;
 
     if (!url) return response.status(400).send('Please provide a URL. Example: ?url=https://example.com');
-
 
     const browser = await puppeteer.launch({
         dumpio: true,
@@ -42,6 +43,11 @@ exports.get3p = async (request, response) => {
     try {
 
         const page = await browser.newPage();
+        
+        if(typeof(crawlAsMobile) != 'undefined' && crawlAsMobile === 'true') {
+          let uaString = devices['Nexus 5'].userAgent;
+          await page.setUserAgent(uaString);
+        }
 
         await page.goto(url, {
             waitUntil: 'load',
