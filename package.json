@@ -14,7 +14,7 @@
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "parse-domain": "^2.1.6",
-    "puppeteer": "^1.9.0"
+    "puppeteer": "^1.13.0"
   },
   "engines": {
     "node": ">=8"
