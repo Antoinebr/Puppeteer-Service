@@ -12,7 +12,7 @@
   "dependencies": {
     "chalk": "^2.4.2",
     "cors": "^2.8.5",
-    "express": "^4.16.4",
+    "express": "^4.18.2",
     "parse-domain": "^2.1.6",
     "puppeteer": "^1.9.0"
   },
